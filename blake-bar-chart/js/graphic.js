@@ -6,27 +6,20 @@ var isMobile = false;
  * Initialize the graphic.
  */
 var onWindowLoaded = function () {
-    if (Modernizr.svg) {
-        formatData();
+	if (Modernizr.svg) {
+		formatData();
 
-        pymChild = new pym.Child({
-            renderCallback: render,
-        });
-    } else {
-        pymChild = new pym.Child({});
-    }
+		pymChild = new pym.Child({
+			renderCallback: render,
+		});
+	} else {
+		pymChild = new pym.Child({});
+	}
+};
 
-    pymChild.onMessage('on-screen', function(bucket) {
-        ANALYTICS.trackEvent('on-screen', bucket);
-    });
-    pymChild.onMessage('scroll-depth', function(data) {
-        data = JSON.parse(data);
-        ANALYTICS.trackEvent('scroll-depth', data.percent, data.seconds);
-    });
-}
 
 /*
- * Format data for D3.
+ * Format graphic data for processing by D3.
  */
 var formatData = function () {
     DATA.forEach(function (d) {
@@ -37,23 +30,12 @@ var formatData = function () {
 /*
  * Render the graphic(s). Called by pym with the container width.
  */
-var render = function(containerWidth) {
-    if (!containerWidth) {
-        containerWidth = DEFAULT_WIDTH;
-    }
-
-    if (containerWidth <= MOBILE_THRESHOLD) {
-        isMobile = true;
-    } else {
-        isMobile = false;
-    }
+var render = function (containerWidth) {
+    containerWidth = containerWidth || DEFAULT_WIDTH;
+    isMobile = (containerWidth <= MOBILE_THRESHOLD);
 
     // Render the chart!
-    renderBarChart({
-        container: '#bar-chart',
-        width: containerWidth,
-        data: DATA
-    });
+    renderBarChart();
 
     // Update iframe
     if (pymChild) {
@@ -130,23 +112,12 @@ var renderBarChart = function () {
         }
     }
 
-    var max = d3.max(config['data'], function(d) {
-        return Math.ceil(d[valueColumn] / roundTicksFactor) * roundTicksFactor;
-    })
-
-    var xScale = d3.scale.linear()
-        .domain([min, max])
-        .range([0, chartWidth]);
-
-    /*
-     * Create D3 axes.
-     */
-    var xAxis = d3.svg.axis()
-        .scale(xScale)
-        .orient('bottom')
-        .ticks(ticksX)
-        .tickFormat(function(d) {
-            return d.toFixed(0) + '%';
+    var maxX;
+    if (LABELS.maxX) {
+        maxX = parseFloat(LABELS.maxX, 10);
+    } else {
+        maxX = d3.max(DATA, function (d) {
+            return d.amt;
         });
     }
 
@@ -198,17 +169,6 @@ var renderBarChart = function () {
                     return colorScale(i);
                 },
             });
-    /*
-     * Render 0-line.
-     */
-    if (min < 0) {
-        chartElement.append('line')
-            .attr('class', 'zero-line')
-            .attr('x1', xScale(0))
-            .attr('x2', xScale(0))
-            .attr('y1', 0)
-            .attr('y2', chartHeight);
-    }
 
     /*
      * Render bar labels.

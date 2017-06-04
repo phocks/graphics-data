@@ -489,6 +489,7 @@ var renderLineChart = function () {
                 left: (xScale(lastObj.values[0].x) + margins.left + 10) + 'px',
 
                 top: function (d) {
+                    console.log(d);
                     var yPosAvg = d.reduce(function (memo, num) {
                         return memo + num.yPos;
                     }, 0) / d.length;
@@ -558,7 +559,6 @@ var renderLineChart = function () {
         chartElement.on({
             mousemove: function (e) {
                 var posX = d3.mouse(overlay.node())[0];
-                console.log('posX', posX);
                 var xVal;
                 var obj;
                 if (isDateScale) {
